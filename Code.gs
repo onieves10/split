@@ -265,14 +265,27 @@ function removeRow_(sh, payer, row) {
 
 // ---------- months ----------
 
+// The template tab. Exact name wins; otherwise any tab whose name starts with
+// "Template", so renames like "TEMPLATE (DO NOT EDIT)" keep working.
+function findTemplate_(ss) {
+  const sheets = ss.getSheets();
+  let loose = null;
+  for (let i = 0; i < sheets.length; i++) {
+    const n = sheets[i].getName().trim();
+    if (n.toLowerCase() === 'template') return sheets[i];
+    if (!loose && /^template\b/i.test(n)) loose = sheets[i];
+  }
+  return loose;
+}
+
 function createMonth_(ss, req) {
   const y = Number(req.year);
   const m = Number(req.monthIndex);
   if (!(y >= 2000 && y <= 2100) || !(m >= 1 && m <= 12)) throw new Error('Pick a valid month.');
   const name = MONTH_ABBR[m - 1] + ' ' + y;
   if (ss.getSheetByName(name)) throw new Error(name + ' already exists.');
-  const template = ss.getSheetByName('Template');
-  if (!template) throw new Error('The sheet has no Template tab to copy.');
+  const template = findTemplate_(ss);
+  if (!template) throw new Error('The sheet has no Template tab to copy. Name a tab Template, or start its name with Template, like "TEMPLATE (DO NOT EDIT)".');
 
   const sh = template.copyTo(ss).setName(name);
   sh.getRange('A1').setValue("'" + MONTH_FULL[m - 1] + ' ' + y);

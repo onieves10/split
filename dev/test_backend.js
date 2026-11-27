@@ -93,4 +93,18 @@ ok('addExpense', { month: M, payer: 'Jonah', date: '2026-11-22', item: 'Tiny sha
 r = ok('bootstrap', { month: 'Jan 2027' });
 assert.strictEqual(r.month.name, 'Jan 2027'); assert.strictEqual(r.month.expenses.length, 1);
 assert.strictEqual(ok('bootstrap', { month: 'Mar 2031' }).month, undefined);
+// 8. template tab renamed, e.g. "TEMPLATE (DO NOT EDIT)"
+const tpl = ss.getSheets().find((s) => s.name === 'Template');
+assert(tpl, 'template tab present');
+tpl.setName('TEMPLATE (DO NOT EDIT)');
+r = ok('createMonth', { year: 2027, monthIndex: 2 });
+assert.strictEqual(r.month.title, 'February 2027');
+assert(ss.getSheets().some((s) => s.name === 'Feb 2027'), 'Feb 2027 copied from the renamed template');
+tpl.setName('Monthly template');  // does not start with "Template"
+fails('createMonth', { year: 2027, monthIndex: 3 }, /no Template tab/);
+tpl.setName('template');          // case does not matter
+r = ok('createMonth', { year: 2027, monthIndex: 3 });
+assert.strictEqual(r.month.title, 'March 2027');
+tpl.setName('Template');
+
 console.log('All backend tests passed');
