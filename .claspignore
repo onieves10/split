@@ -1,0 +1,5 @@
+# Push only the Apps Script backend. Everything else in this repo is
+# the website (index.html, icon.png) or local development tooling.
+**/**
+!Code.gs
+!appsscript.json

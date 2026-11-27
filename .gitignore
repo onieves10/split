@@ -1,0 +1,3 @@
+# Local clasp pointer to the Apps Script project (machine specific)
+.clasp.json
+.DS_Store
