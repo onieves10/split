@@ -17,7 +17,7 @@ A phone-first app for Orlando and Jonah's shared expenses. It reads and writes t
    - Who has access: **Anyone**
 4. Click **Deploy** and allow access. If Google warns that the app isn't verified, click
    **Advanced**, then **Go to (project name)**. It's your own script.
-5. Copy the **Web app URL**. It ends in `/exec`.
+5. Copy the **Web app URL**. It ends in `/exec`. Put it in `index.html` as `API_URL`.
 
 ### 2. Website
 
@@ -27,10 +27,10 @@ A phone-first app for Orlando and Jonah's shared expenses. It reads and writes t
 
 ### 3. Phones
 
-1. Open the site in Safari, tap your name, paste the Web app URL and pick a passcode, then **Connect**.
+1. Open the site in Safari, tap your name and pick a passcode, then **Connect**.
    The first passcode entered becomes the passcode for both of you.
 2. Tap the Share button, then **Add to Home Screen**. It opens full screen like an app.
-3. In the app's Settings, tap **Send Jonah a setup link**. He opens it, taps his name and enters the same passcode.
+3. Jonah does the same on his phone: open the site, tap his name, enter the same passcode.
 
 ## Using it
 
@@ -50,7 +50,7 @@ choose **Version: New version** and **Deploy**. The URL stays the same.
 - All data is in the Google Sheet. Editing the sheet directly still works.
 - The passcode and Venmo usernames are on the sheet's Settings tab (App settings block, added on first use).
 - A closed month shows its status in cells J4:K7 and gets a warning-only protection, so the sheet asks before anyone edits it.
-- The backend URL and passcode are saved only on each phone, never in this repo.
+- The backend URL is baked into `index.html` as `API_URL`. The passcode is saved only on each phone, never in this repo.
 
 ## Development
 

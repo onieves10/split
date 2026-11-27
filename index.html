@@ -189,6 +189,11 @@ const FULL = ['January','February','March','April','May','June','July','August',
 const DEMO = new URLSearchParams(location.search).has('demo');
 const KEY = DEMO ? 'split.demo.' : 'split.';
 
+// The deployed Apps Script web app. Baked in so setup only asks for a name
+// and a passcode. If the backend ever moves, redeploy with the new /exec URL
+// here, or open the site once with #connect=<base64 of the new /exec URL>.
+const API_URL = 'https://script.google.com/macros/s/AKfycbxRGR1B7JV1_rwi_7A-S9OFf24BPH39eF_-gcDbdNMDJe37aVAReeBFWUOi-7fLQaE/exec';
+
 // ---------- storage ----------
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(KEY + k)); } catch (e) { return null; } },
@@ -707,7 +712,7 @@ async function createMonth(y, m, btn) {
 // ---------- settings ----------
 function openSettings() {
   const st = S.settings || { splits: [], venmo: {}, defaultSplit: '50/50' };
-  const invite = DEMO ? '' : `${location.origin}${location.pathname}#connect=${btoa(S.cfg.api || '')}`;
+  // Jonah no longer needs a setup link: the backend URL is baked in.
   openOverlay(`
     <div class="page-head"><span></span><h2>Settings</h2><button class="head-btn right" data-act="close">Done</button></div>
     <div class="label">This phone belongs to</div>
@@ -727,18 +732,17 @@ function openSettings() {
     ${DEMO ? '' : `
     <div class="label">Connection</div>
     <div class="group">
-      <button class="row tap" data-act="invite" style="width:100%"><span class="rk">Send ${esc(other(me()))} a setup link</span><span class="rv">&rsaquo;</span></button>
       ${S.sheetUrl ? `<a class="row tap" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener"><span class="rk">Open the Google Sheet</span><span class="rv">&rsaquo;</span></a>` : ''}
       <button class="row tap" data-act="disconnect" style="width:100%"><span class="rk" style="color:var(--danger)">Disconnect this phone</span></button>
     </div>
-    <p class="help">The setup link fills in the backend URL. Share the passcode separately.</p>`}
+    <p class="help">${esc(other(me()))} just opens the site on his phone, taps his name and enters the same passcode.</p>`}
     <p class="foot">Everything is stored in your Google Sheet. This app only shows and edits it.</p>
   `, 'page');
   $('#s-default').addEventListener('change', async (e) => {
     try { apply(await api('saveSettings', { defaultSplit: e.target.value })); render(); toast(`Default split is now ${e.target.value}`); }
     catch (err) { handleError(err); }
   });
-  if (invite) S._invite = invite;
+
 }
 async function saveVenmos(btn) {
   const venmo = {}; PEOPLE.forEach((p) => { venmo[p] = $('#v-' + p).value.trim(); });
@@ -768,7 +772,7 @@ const setupState = { me: null, api: '', pass: '' };
 function renderSetup(msg) {
   const st = setupState;
   st.me = st.me || S.cfg.me || null;
-  st.api = st.api || S.cfg.api || '';
+  st.api = st.api || S.cfg.api || API_URL;
   $('#app').innerHTML = `
     <div class="setup">
       <img class="logo" src="icon.png" alt="">
@@ -776,9 +780,8 @@ function renderSetup(msg) {
       <p class="tag">Shared expenses for Orlando and Jonah, saved straight to your Google Sheet.</p>
       <div class="label">Who's using this phone?</div>
       <div class="who">${PEOPLE.map((p) => `<button class="${st.me === p ? 'on' : ''}" data-act="setup-me" data-v="${p}">${avatar(p)}${p}</button>`).join('')}</div>
-      <div class="label">Connect to the sheet</div>
+      <div class="label">Passcode</div>
       <div class="sheet-pad">
-        <input class="field" id="su-api" placeholder="Backend URL (ends in /exec)" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url" value="${esc(st.api)}">
         <input class="field" id="su-pass" type="password" placeholder="Passcode" autocomplete="current-password" value="${esc(st.pass)}">
       </div>
       <p class="help">First time? The passcode you type here becomes the passcode for both of you.</p>
@@ -791,10 +794,10 @@ function renderSetup(msg) {
 }
 async function connect(btn) {
   const st = setupState;
-  st.api = $('#su-api').value.trim(); st.pass = $('#su-pass').value.trim();
+  st.api = st.api || API_URL; st.pass = $('#su-pass').value.trim();
   const err = $('#su-err');
   if (!st.me) { err.textContent = 'Pick who is using this phone.'; return; }
-  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(st.api)) { err.textContent = 'Paste the web app URL from Apps Script. It starts with https://script.google.com/'; return; }
+  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(st.api)) { err.textContent = 'This app is not pointed at a backend yet.'; return; }
   if (st.pass.length < 4) { err.textContent = 'Enter a passcode of at least 4 characters.'; return; }
   btn.disabled = true; btn.textContent = 'Connecting'; err.textContent = '';
   const cfg = { api: st.api, passcode: st.pass, me: st.me };
@@ -855,13 +858,13 @@ const actions = {
   'save-venmos': (el) => saveVenmos(el),
   'add-split': (el) => addSplit(el),
   'set-me': (el) => { S.cfg.me = el.dataset.v; store.set('cfg', S.cfg); render(); openSettings(); },
-  invite: () => share(S._invite),
+
   disconnect: (el) => {
     if (el.dataset.armed !== '1') { el.dataset.armed = '1'; el.querySelector('.rk').textContent = 'Tap again to disconnect'; return; }
     store.del('cfg'); store.del('cache'); location.replace(location.pathname);
   },
   'setup-me': (el) => {
-    setupState.me = el.dataset.v; setupState.api = $('#su-api').value; setupState.pass = $('#su-pass').value;
+    setupState.me = el.dataset.v; setupState.pass = $('#su-pass').value;
     renderSetup($('#su-err').textContent);
   },
   connect: (el) => connect(el)
